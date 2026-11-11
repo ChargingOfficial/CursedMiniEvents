@@ -175,7 +175,7 @@ public final class CursedMiniEvents extends JavaPlugin implements Listener {
         sender.sendMessage("§bDiamond Chestplate: §f1/500");
         sender.sendMessage("§bDiamond Leggings: §f1/500");
         sender.sendMessage("§bDiamond Boots: §f1/500");
-        sender.sendMessage("§5Apple Of Life: §f1/2,000 §7(after the hidden 10-minute lockout)");
+        sender.sendMessage("§5Apple Of Life: §f1/2,000");
         sender.sendMessage("§7Armor pieces roll independently; only one armor piece can drop per leaf.");
         sender.sendMessage("§7Stackable rewards can drop 1-10 items; larger stacks are progressively rarer.");
         sender.sendMessage("§6§l===========================================");
