@@ -38,6 +38,7 @@ public final class CursedMiniEvents extends JavaPlugin implements Listener {
     private NamespacedKey appleModelKey;
     private boolean luckyLeavesActive = false;
     private boolean appleDroppedThisEvent = false;
+    private long appleUnlockTimeMillis = 0L;
     private final Map<UUID, Integer> leavesBroken = new HashMap<>();
     private final Map<UUID, String> playerNames = new HashMap<>();
     private BukkitTask bossBarTask;
@@ -140,6 +141,7 @@ public final class CursedMiniEvents extends JavaPlugin implements Listener {
     private void startLuckyLeaves() {
         luckyLeavesActive = true;
         appleDroppedThisEvent = false;
+        appleUnlockTimeMillis = System.currentTimeMillis() + 10L * 60L * 1000L;
         leavesBroken.clear();
         playerNames.clear();
         if (eventBossBar != null) eventBossBar.removeAll();
@@ -194,7 +196,8 @@ public final class CursedMiniEvents extends JavaPlugin implements Listener {
         dropIf(1, 50, Material.DIAMOND, block);
         dropIf(1, 50, Material.NETHERITE_SCRAP, block);
 
-        if (!appleDroppedThisEvent && random.nextInt(2000) == 0) {
+        if (!appleDroppedThisEvent && System.currentTimeMillis() >= appleUnlockTimeMillis
+                && random.nextInt(2000) == 0) {
             appleDroppedThisEvent = true;
             block.getWorld().dropItemNaturally(block.getLocation().add(0.5, 0.5, 0.5), createAppleOfLife());
             Bukkit.broadcastMessage("§5§l✦ APPLE OF LIFE ✦ §d" + event.getPlayer().getName() + " §fhas discovered the §5§lApple Of Life§f!");
