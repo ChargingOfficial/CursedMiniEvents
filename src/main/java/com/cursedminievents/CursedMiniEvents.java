@@ -166,7 +166,7 @@ public final class CursedMiniEvents extends JavaPlugin implements Listener {
         dropIf(1, 50, Material.DIAMOND, block);
         dropIf(1, 50, Material.NETHERITE_SCRAP, block);
 
-        if (!appleDroppedThisEvent && random.nextInt(250) == 0) {
+        if (!appleDroppedThisEvent && random.nextInt(2000) == 0) {
             appleDroppedThisEvent = true;
             block.getWorld().dropItemNaturally(block.getLocation().add(0.5, 0.5, 0.5), createAppleOfLife());
             Bukkit.broadcastMessage("§5§l✦ APPLE OF LIFE ✦ §d" + event.getPlayer().getName() + " §fhas discovered the §5§lApple Of Life§f!");
