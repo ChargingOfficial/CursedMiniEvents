@@ -198,7 +198,11 @@ public final class CursedMiniEvents extends JavaPlugin implements Listener {
                 BarColor.GREEN, BarStyle.SOLID);
         eventBossBar.setVisible(true);
         eventBossBar.setProgress(1.0);
-        for (Player online : Bukkit.getOnlinePlayers()) eventBossBar.addPlayer(online);
+        for (Player online : Bukkit.getOnlinePlayers()) {
+            eventBossBar.addPlayer(online);
+            online.sendTitle("§6§lLUCKY LEAVES!", "§eBreak leaves for rare rewards!", 10, 80, 20);
+            online.playSound(online.getLocation(), Sound.ENTITY_ENDER_DRAGON_GROWL, 1.0f, 1.0f);
+        }
     }
 
     private void finishLuckyLeaves(String endingMessage) {
