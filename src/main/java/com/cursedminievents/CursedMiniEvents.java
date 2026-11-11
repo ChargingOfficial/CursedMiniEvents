@@ -132,13 +132,13 @@ public final class CursedMiniEvents extends JavaPlugin implements Listener {
         Block block = event.getBlock();
         if (!block.getType().name().endsWith("_LEAVES")) return;
 
-        dropIf(1, 10, Material.GOLDEN_APPLE, block);
-        dropIf(1, 100, Material.GOLD_BLOCK, block);
-        dropIf(1, 5, Material.GOLD_INGOT, block);
-        dropIf(1, 5, Material.IRON_INGOT, block);
-        dropIf(1, 5, Material.COPPER_INGOT, block);
-        dropIf(1, 50, Material.DIAMOND, block);
-        dropIf(1, 50, Material.NETHERITE_SCRAP, block);
+        dropIf(10, Material.GOLDEN_APPLE, block);
+        dropIf(100, Material.GOLD_BLOCK, block);
+        dropIf(5, Material.GOLD_INGOT, block);
+        dropIf(5, Material.IRON_INGOT, block);
+        dropIf(5, Material.COPPER_INGOT, block);
+        dropIf(50, Material.DIAMOND, block);
+        dropIf(50, Material.NETHERITE_SCRAP, block);
 
         if (!appleDroppedThisEvent && random.nextInt(10_000) == 0) {
             appleDroppedThisEvent = true;
@@ -152,7 +152,7 @@ public final class CursedMiniEvents extends JavaPlugin implements Listener {
         dropArmor(Material.DIAMOND_BOOTS, block);
     }
 
-    private void dropIf(int denominator, int ignored, Material material, Block block) {
+    private void dropIf(int denominator, Material material, Block block) {
         if (random.nextInt(denominator) == 0) {
             int amount = weightedStackAmount();
             block.getWorld().dropItemNaturally(block.getLocation().add(0.5, 0.5, 0.5), new ItemStack(material, amount));
