@@ -205,13 +205,13 @@ public final class CursedMiniEvents extends JavaPlugin implements Listener {
         leavesBroken.merge(playerId, 1, Integer::sum);
         playerNames.put(playerId, event.getPlayer().getName());
 
-        dropIf(1, 20, Material.GOLDEN_APPLE, block);
-        dropIf(1, 100, Material.GOLD_BLOCK, block);
-        dropIf(1, 20, Material.GOLD_INGOT, block);
-        dropIf(1, 5, Material.IRON_INGOT, block);
-        dropIf(1, 5, Material.COPPER_INGOT, block);
-        dropIf(1, 50, Material.DIAMOND, block);
-        dropIf(1, 50, Material.NETHERITE_SCRAP, block);
+        dropIf(1, 10, Material.GOLDEN_APPLE, block);
+        dropIf(1, 50, Material.GOLD_BLOCK, block);
+        dropIf(1, 10, Material.GOLD_INGOT, block);
+        dropIf(1, 2, Material.IRON_INGOT, block);
+        dropIf(1, 2, Material.COPPER_INGOT, block);
+        dropIf(1, 25, Material.DIAMOND, block);
+        dropIf(1, 25, Material.NETHERITE_SCRAP, block);
 
         if (!appleDroppedThisEvent && System.currentTimeMillis() >= appleUnlockTimeMillis
                 && random.nextInt(2000) == 0) {
