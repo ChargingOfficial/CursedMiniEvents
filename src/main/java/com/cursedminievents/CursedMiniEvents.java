@@ -89,6 +89,21 @@ public final class CursedMiniEvents extends JavaPlugin implements Listener {
                     if (!luckyLeavesActive) sender.sendMessage("§eLucky Leaves is currently inactive.");
                     else sender.sendMessage("§aLucky Leaves is active. It ends when the Apple Of Life is found.");
                 }
+                case "locktime" -> {
+                    if (!(sender instanceof Player player) || !player.isOp()) {
+                        sender.sendMessage("§cYou do not have permission to use this testing command.");
+                        return true;
+                    }
+                    if (!luckyLeavesActive) {
+                        sender.sendMessage("§eThere is no active Lucky Leaves event.");
+                        return true;
+                    }
+                    long remainingMillis = Math.max(0L, appleUnlockTimeMillis - System.currentTimeMillis());
+                    long remainingMinutes = (remainingMillis + 59_999L) / 60_000L;
+                    long remainingSeconds = (remainingMillis + 999L) / 1_000L;
+                    sender.sendMessage("§d[Testing] Apple Of Life unlock: §f" + remainingMinutes
+                            + " minute(s) remaining §7(" + remainingSeconds + " second(s)).");
+                }
                 default -> sender.sendMessage("§eUsage: /minievent luckyleaves <start [minutes]|stop|status>");
             }
             return true;
@@ -119,7 +134,9 @@ public final class CursedMiniEvents extends JavaPlugin implements Listener {
                 return matching(args[0], List.of("luckyleaves"));
             }
             if (args.length == 2 && args[0].equalsIgnoreCase("luckyleaves")) {
-                return matching(args[1], List.of("start", "stop", "status"));
+                List<String> options = new ArrayList<>(List.of("start", "stop", "status"));
+                if (sender instanceof Player player && player.isOp()) options.add("locktime");
+                return matching(args[1], options);
             }
             return List.of();
         }
