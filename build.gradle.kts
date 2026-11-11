@@ -2,7 +2,7 @@ plugins {
     java
 }
 group = "com.cursedminievents"
-version = "1.0.8"
+version = "1.0.9"
 repositories {
     mavenCentral()
     maven("https://repo.papermc.io/repository/maven-public/")
