@@ -25,8 +25,12 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
+import java.util.UUID;
 
 public final class CursedMiniEvents extends JavaPlugin implements Listener {
     private final Random random = new Random();
@@ -34,8 +38,8 @@ public final class CursedMiniEvents extends JavaPlugin implements Listener {
     private NamespacedKey appleModelKey;
     private boolean luckyLeavesActive = false;
     private boolean appleDroppedThisEvent = false;
-    private long eventEndsAt = 0L;
-    private BukkitTask stopTask;
+    private final Map<UUID, Integer> leavesBroken = new HashMap<>();
+    private final Map<UUID, String> playerNames = new HashMap<>();
     private BukkitTask bossBarTask;
     private BossBar eventBossBar;
 
@@ -44,12 +48,11 @@ public final class CursedMiniEvents extends JavaPlugin implements Listener {
         appleKey = new NamespacedKey(this, "apple_of_life");
         appleModelKey = new NamespacedKey(this, "apple_of_life");
         Bukkit.getPluginManager().registerEvents(this, this);
-        getLogger().info("Cursed Mini Events 1.0.8 enabled.");
+        getLogger().info("Cursed Mini Events 1.0.9 enabled.");
     }
 
     @Override
     public void onDisable() {
-        if (stopTask != null) stopTask.cancel();
         if (bossBarTask != null) bossBarTask.cancel();
         if (eventBossBar != null) eventBossBar.removeAll();
     }
@@ -72,27 +75,18 @@ public final class CursedMiniEvents extends JavaPlugin implements Listener {
             }
             switch (args[1].toLowerCase()) {
                 case "start" -> {
-                    int minutes = 10;
-                    if (args.length >= 3) {
-                        try { minutes = Math.max(1, Integer.parseInt(args[2])); }
-                        catch (NumberFormatException ex) {
-                            sender.sendMessage("§cMinutes must be a whole number.");
-                            return true;
-                        }
-                    }
-                    startLuckyLeaves(minutes);
-                    Bukkit.broadcastMessage("§6§lLUCKY LEAVES §ehas started! Break any leaves for a chance at rare rewards. Duration: " + minutes + " minute(s).");
+                    startLuckyLeaves();
+                    Bukkit.broadcastMessage("§6§lLUCKY LEAVES §ehas started! Break leaves for rare rewards. The event ends when someone finds the Apple Of Life!");
                 }
                 case "stop" -> {
                     if (!luckyLeavesActive) sender.sendMessage("§cLucky Leaves is not running.");
                     else {
-                        stopLuckyLeaves();
-                        Bukkit.broadcastMessage("§6§lLUCKY LEAVES §chas ended.");
+                        finishLuckyLeaves("§cThe event was stopped by an administrator.");
                     }
                 }
                 case "status" -> {
                     if (!luckyLeavesActive) sender.sendMessage("§eLucky Leaves is currently inactive.");
-                    else sender.sendMessage("§aLucky Leaves is active for about " + Math.max(0, (eventEndsAt - System.currentTimeMillis()) / 1000) + " seconds.");
+                    else sender.sendMessage("§aLucky Leaves is active. It ends when the Apple Of Life is found.");
                 }
                 default -> sender.sendMessage("§eUsage: /minievent luckyleaves <start [minutes]|stop|status>");
             }
@@ -115,40 +109,43 @@ public final class CursedMiniEvents extends JavaPlugin implements Listener {
         return false;
     }
 
-    private void startLuckyLeaves(int minutes) {
-        if (stopTask != null) stopTask.cancel();
+    private void startLuckyLeaves() {
         luckyLeavesActive = true;
         appleDroppedThisEvent = false;
+        leavesBroken.clear();
+        playerNames.clear();
         if (eventBossBar != null) eventBossBar.removeAll();
         eventBossBar = Bukkit.createBossBar(
                 "§6Lucky Leaves Event: Mine leaves for a chance of getting the apple of life and other OP Loot",
                 BarColor.GREEN, BarStyle.SOLID);
         eventBossBar.setVisible(true);
+        eventBossBar.setProgress(1.0);
         for (Player online : Bukkit.getOnlinePlayers()) eventBossBar.addPlayer(online);
-        if (bossBarTask != null) bossBarTask.cancel();
-        bossBarTask = Bukkit.getScheduler().runTaskTimer(this, () -> {
-            if (!luckyLeavesActive || eventBossBar == null) return;
-            long remaining = Math.max(0L, eventEndsAt - System.currentTimeMillis());
-            eventBossBar.setProgress(Math.max(0.0, Math.min(1.0, (double) remaining / (minutes * 60_000L))));
-        }, 0L, 20L);
-        eventEndsAt = System.currentTimeMillis() + minutes * 60_000L;
-        stopTask = Bukkit.getScheduler().runTaskLater(this, () -> {
-            if (luckyLeavesActive) {
-                stopLuckyLeaves();
-                Bukkit.broadcastMessage("§6§lLUCKY LEAVES §chas ended.");
-            }
-        }, minutes * 60L * 20L);
     }
 
-    private void stopLuckyLeaves() {
+    private void finishLuckyLeaves(String endingMessage) {
+        if (!luckyLeavesActive) return;
         luckyLeavesActive = false;
-        eventEndsAt = 0L;
-        if (bossBarTask != null) { bossBarTask.cancel(); bossBarTask = null; }
-        if (eventBossBar != null) { eventBossBar.removeAll(); eventBossBar = null; }
-        if (stopTask != null) {
-            stopTask.cancel();
-            stopTask = null;
+        if (eventBossBar != null) {
+            eventBossBar.removeAll();
+            eventBossBar = null;
         }
+        Bukkit.broadcastMessage("§6§l========== LUCKY LEAVES LEADERBOARD ==========");
+        Bukkit.broadcastMessage(endingMessage);
+        List<Map.Entry<UUID, Integer>> ranking = new ArrayList<>(leavesBroken.entrySet());
+        ranking.sort(Map.Entry.<UUID, Integer>comparingByValue(Comparator.reverseOrder())
+                .thenComparing(entry -> playerNames.getOrDefault(entry.getKey(), "Unknown"), String.CASE_INSENSITIVE_ORDER));
+        if (ranking.isEmpty()) {
+            Bukkit.broadcastMessage("§7No leaves were broken during this event.");
+        } else {
+            int place = 1;
+            for (Map.Entry<UUID, Integer> entry : ranking) {
+                String playerName = playerNames.getOrDefault(entry.getKey(), "Unknown");
+                Bukkit.broadcastMessage("§e#" + place + " §f" + playerName + " §7- §a" + entry.getValue() + " leaves");
+                place++;
+            }
+        }
+        Bukkit.broadcastMessage("§6§l============================================");
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -157,15 +154,19 @@ public final class CursedMiniEvents extends JavaPlugin implements Listener {
         Block block = event.getBlock();
         if (!block.getType().name().endsWith("_LEAVES")) return;
 
-        dropIf(10, Material.GOLDEN_APPLE, block);
-        dropIf(100, Material.GOLD_BLOCK, block);
-        dropIf(5, Material.GOLD_INGOT, block);
-        dropIf(5, Material.IRON_INGOT, block);
-        dropIf(5, Material.COPPER_INGOT, block);
-        dropIf(50, Material.DIAMOND, block);
-        dropIf(50, Material.NETHERITE_SCRAP, block);
+        UUID playerId = event.getPlayer().getUniqueId();
+        leavesBroken.merge(playerId, 1, Integer::sum);
+        playerNames.put(playerId, event.getPlayer().getName());
 
-        if (!appleDroppedThisEvent && random.nextInt(5_000) == 0) {
+        dropIf(3, 10, Material.GOLDEN_APPLE, block);
+        dropIf(3, 100, Material.GOLD_BLOCK, block);
+        dropIf(3, 5, Material.GOLD_INGOT, block);
+        dropIf(1, 5, Material.IRON_INGOT, block);
+        dropIf(1, 5, Material.COPPER_INGOT, block);
+        dropIf(3, 50, Material.DIAMOND, block);
+        dropIf(3, 50, Material.NETHERITE_SCRAP, block);
+
+        if (!appleDroppedThisEvent && random.nextInt(250) == 0) {
             appleDroppedThisEvent = true;
             block.getWorld().dropItemNaturally(block.getLocation().add(0.5, 0.5, 0.5), createAppleOfLife());
             Bukkit.broadcastMessage("§5§l✦ APPLE OF LIFE ✦ §d" + event.getPlayer().getName() + " §fhas discovered the §5§lApple Of Life§f!");
@@ -184,10 +185,14 @@ public final class CursedMiniEvents extends JavaPlugin implements Listener {
             Material chosenPiece = successfulArmorRolls.get(random.nextInt(successfulArmorRolls.size()));
             dropArmor(chosenPiece, block, event.getPlayer());
         }
+
+        if (appleDroppedThisEvent) {
+            finishLuckyLeaves("§d" + event.getPlayer().getName() + " §ffound the Apple Of Life! The event is over.");
+        }
     }
 
-    private void dropIf(int denominator, Material material, Block block) {
-        if (random.nextInt(denominator) == 0) {
+    private void dropIf(int numerator, int denominator, Material material, Block block) {
+        if (random.nextInt(denominator) < numerator) {
             int amount = weightedStackAmount();
             block.getWorld().dropItemNaturally(block.getLocation().add(0.5, 0.5, 0.5), new ItemStack(material, amount));
         }
