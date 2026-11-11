@@ -26,6 +26,7 @@ import java.util.Random;
 public final class CursedMiniEvents extends JavaPlugin implements Listener {
     private final Random random = new Random();
     private NamespacedKey appleKey;
+    private NamespacedKey appleModelKey;
     private boolean luckyLeavesActive = false;
     private boolean appleDroppedThisEvent = false;
     private long eventEndsAt = 0L;
@@ -34,6 +35,7 @@ public final class CursedMiniEvents extends JavaPlugin implements Listener {
     @Override
     public void onEnable() {
         appleKey = new NamespacedKey(this, "apple_of_life");
+        appleModelKey = new NamespacedKey(this, "apple_of_life");
         Bukkit.getPluginManager().registerEvents(this, this);
         getLogger().info("Cursed Mini Events 1.0.6 enabled.");
     }
@@ -207,6 +209,7 @@ public final class CursedMiniEvents extends JavaPlugin implements Listener {
         ItemMeta meta = apple.getItemMeta();
         if (meta != null) {
             meta.setDisplayName("§5§lApple Of Life");
+            meta.setItemModel(appleModelKey);
             meta.setLore(java.util.List.of("§dAn endlessly reusable golden apple.", "§7A rare treasure from Lucky Leaves."));
             meta.getPersistentDataContainer().set(appleKey, PersistentDataType.BYTE, (byte) 1);
             meta.setEnchantmentGlintOverride(true);
@@ -219,13 +222,13 @@ public final class CursedMiniEvents extends JavaPlugin implements Listener {
     public void onAppleConsume(PlayerItemConsumeEvent event) {
         ItemMeta meta = event.getItem().getItemMeta();
         if (meta == null || !meta.getPersistentDataContainer().has(appleKey, PersistentDataType.BYTE)) return;
-        ItemStack replacement = createAppleOfLife();
+
+        // Cancel vanilla consumption so the exact Apple Of Life stack stays in its slot.
+        event.setCancelled(true);
         Player player = event.getPlayer();
-        Bukkit.getScheduler().runTask(this, () -> {
-            if (player.isOnline()) {
-                Map<Integer, ItemStack> leftovers = player.getInventory().addItem(replacement);
-                leftovers.values().forEach(item -> player.getWorld().dropItemNaturally(player.getLocation(), item));
-            }
-        });
+        player.addPotionEffect(new org.bukkit.potion.PotionEffect(org.bukkit.potion.PotionEffectType.REGENERATION, 100, 1));
+        player.addPotionEffect(new org.bukkit.potion.PotionEffect(org.bukkit.potion.PotionEffectType.ABSORPTION, 2400, 0));
+        player.setFoodLevel(Math.min(20, player.getFoodLevel() + 4));
+        player.setSaturation(Math.min(player.getFoodLevel(), player.getSaturation() + 9.6f));
     }
 }
