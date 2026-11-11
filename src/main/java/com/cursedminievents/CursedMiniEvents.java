@@ -60,6 +60,13 @@ public final class CursedMiniEvents extends JavaPlugin implements Listener {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        // Public information command: every player can view the current Lucky Leaves odds.
+        if (command.getName().equalsIgnoreCase("minievent")
+                && args.length == 1 && args[0].equalsIgnoreCase("droprates")) {
+            sendDropRates(sender);
+            return true;
+        }
+
         if (!sender.hasPermission("cursedminievents.admin")) {
             sender.sendMessage("§cYou do not have permission to use this command.");
             return true;
@@ -127,6 +134,11 @@ public final class CursedMiniEvents extends JavaPlugin implements Listener {
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        if (command.getName().equalsIgnoreCase("minievent") && args.length == 1) {
+            List<String> options = new ArrayList<>(List.of("droprates"));
+            if (sender.hasPermission("cursedminievents.admin")) options.add("luckyleaves");
+            return matching(args[0], options);
+        }
         if (!sender.hasPermission("cursedminievents.admin")) return List.of();
 
         if (command.getName().equalsIgnoreCase("minievent")) {
@@ -148,6 +160,25 @@ public final class CursedMiniEvents extends JavaPlugin implements Listener {
             }
         }
         return List.of();
+    }
+
+    private void sendDropRates(CommandSender sender) {
+        sender.sendMessage("§6§l========== LUCKY LEAVES DROP RATES ==========");
+        sender.sendMessage("§eGolden Apple: §f1/40");
+        sender.sendMessage("§eGold Block: §f1/200");
+        sender.sendMessage("§eGold Ingots: §f1/40");
+        sender.sendMessage("§eIron Ingots: §f1/10");
+        sender.sendMessage("§eCopper Ingots: §f1/10");
+        sender.sendMessage("§eDiamonds: §f1/100");
+        sender.sendMessage("§eNetherite Scrap: §f1/100");
+        sender.sendMessage("§bDiamond Helmet: §f1/500");
+        sender.sendMessage("§bDiamond Chestplate: §f1/500");
+        sender.sendMessage("§bDiamond Leggings: §f1/500");
+        sender.sendMessage("§bDiamond Boots: §f1/500");
+        sender.sendMessage("§5Apple Of Life: §f1/2,000 §7(after the hidden 10-minute lockout)");
+        sender.sendMessage("§7Armor pieces roll independently; only one armor piece can drop per leaf.");
+        sender.sendMessage("§7Stackable rewards can drop 1-10 items; larger stacks are progressively rarer.");
+        sender.sendMessage("§6§l===========================================");
     }
 
     private List<String> matching(String typed, List<String> options) {
