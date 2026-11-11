@@ -28,16 +28,16 @@ jobs:
       - name: Upload plugin JAR
         uses: actions/upload-artifact@v4
         with:
-          name: Cursed-Mini-Events-1.0.7
+          name: Cursed-Mini-Events-1.0.8
           path: build/libs/*.jar
           if-no-files-found: error
       - name: Package resource pack
         run: |
           cd resource-pack
-          zip -r ../Cursed-Mini-Events-Resource-Pack-1.0.7.zip .
+          zip -r ../Cursed-Mini-Events-Resource-Pack-1.0.8.zip .
       - name: Upload resource pack
         uses: actions/upload-artifact@v4
         with:
-          name: Cursed-Mini-Events-Resource-Pack-1.0.7
-          path: Cursed-Mini-Events-Resource-Pack-1.0.7.zip
+          name: Cursed-Mini-Events-Resource-Pack-1.0.8
+          path: Cursed-Mini-Events-Resource-Pack-1.0.8.zip
           if-no-files-found: error
