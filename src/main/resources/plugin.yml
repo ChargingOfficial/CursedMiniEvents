@@ -1,0 +1,19 @@
+name: CursedMiniEvents
+version: 1.0.6
+main: com.cursedminievents.CursedMiniEvents
+api-version: '1.21.11'
+author: CursedMiniEvents
+description: Custom mini-events including Lucky Leaves and the infinite-use Apple Of Life.
+commands:
+  minievent:
+    description: Manage the Lucky Leaves mini-event.
+    usage: /minievent luckyleaves <start [minutes]|stop|status>
+    permission: cursedminievents.admin
+  minievents:
+    description: Give Cursed Mini Events items.
+    usage: /minievents give apple
+    permission: cursedminievents.admin
+permissions:
+  cursedminievents.admin:
+    description: Allows managing Cursed Mini Events and receiving the Apple Of Life.
+    default: op
