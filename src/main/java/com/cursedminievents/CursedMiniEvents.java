@@ -109,6 +109,34 @@ public final class CursedMiniEvents extends JavaPlugin implements Listener {
         return false;
     }
 
+    @Override
+    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        if (!sender.hasPermission("cursedminievents.admin")) return List.of();
+
+        if (command.getName().equalsIgnoreCase("minievent")) {
+            if (args.length == 1) {
+                return matching(args[0], List.of("luckyleaves"));
+            }
+            if (args.length == 2 && args[0].equalsIgnoreCase("luckyleaves")) {
+                return matching(args[1], List.of("start", "stop", "status"));
+            }
+            return List.of();
+        }
+
+        if (command.getName().equalsIgnoreCase("minievents")) {
+            if (args.length == 1) return matching(args[0], List.of("give"));
+            if (args.length == 2 && args[0].equalsIgnoreCase("give")) {
+                return matching(args[1], List.of("apple"));
+            }
+        }
+        return List.of();
+    }
+
+    private List<String> matching(String typed, List<String> options) {
+        String prefix = typed.toLowerCase();
+        return options.stream().filter(option -> option.startsWith(prefix)).toList();
+    }
+
     private void startLuckyLeaves() {
         luckyLeavesActive = true;
         appleDroppedThisEvent = false;
