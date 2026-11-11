@@ -1,6 +1,10 @@
 package com.cursedminievents;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Sound;
+import org.bukkit.boss.BarColor;
+import org.bukkit.boss.BarStyle;
+import org.bukkit.boss.BossBar;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
@@ -13,14 +17,15 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 public final class CursedMiniEvents extends JavaPlugin implements Listener {
@@ -31,18 +36,22 @@ public final class CursedMiniEvents extends JavaPlugin implements Listener {
     private boolean appleDroppedThisEvent = false;
     private long eventEndsAt = 0L;
     private BukkitTask stopTask;
+    private BukkitTask bossBarTask;
+    private BossBar eventBossBar;
 
     @Override
     public void onEnable() {
         appleKey = new NamespacedKey(this, "apple_of_life");
         appleModelKey = new NamespacedKey(this, "apple_of_life");
         Bukkit.getPluginManager().registerEvents(this, this);
-        getLogger().info("Cursed Mini Events 1.0.6 enabled.");
+        getLogger().info("Cursed Mini Events 1.0.8 enabled.");
     }
 
     @Override
     public void onDisable() {
         if (stopTask != null) stopTask.cancel();
+        if (bossBarTask != null) bossBarTask.cancel();
+        if (eventBossBar != null) eventBossBar.removeAll();
     }
 
     @Override
@@ -110,6 +119,18 @@ public final class CursedMiniEvents extends JavaPlugin implements Listener {
         if (stopTask != null) stopTask.cancel();
         luckyLeavesActive = true;
         appleDroppedThisEvent = false;
+        if (eventBossBar != null) eventBossBar.removeAll();
+        eventBossBar = Bukkit.createBossBar(
+                "§6Lucky Leaves Event: Mine leaves for a chance of getting the apple of life and other OP Loot",
+                BarColor.GREEN, BarStyle.SOLID);
+        eventBossBar.setVisible(true);
+        for (Player online : Bukkit.getOnlinePlayers()) eventBossBar.addPlayer(online);
+        if (bossBarTask != null) bossBarTask.cancel();
+        bossBarTask = Bukkit.getScheduler().runTaskTimer(this, () -> {
+            if (!luckyLeavesActive || eventBossBar == null) return;
+            long remaining = Math.max(0L, eventEndsAt - System.currentTimeMillis());
+            eventBossBar.setProgress(Math.max(0.0, Math.min(1.0, (double) remaining / (minutes * 60_000L))));
+        }, 0L, 20L);
         eventEndsAt = System.currentTimeMillis() + minutes * 60_000L;
         stopTask = Bukkit.getScheduler().runTaskLater(this, () -> {
             if (luckyLeavesActive) {
@@ -122,6 +143,8 @@ public final class CursedMiniEvents extends JavaPlugin implements Listener {
     private void stopLuckyLeaves() {
         luckyLeavesActive = false;
         eventEndsAt = 0L;
+        if (bossBarTask != null) { bossBarTask.cancel(); bossBarTask = null; }
+        if (eventBossBar != null) { eventBossBar.removeAll(); eventBossBar = null; }
         if (stopTask != null) {
             stopTask.cancel();
             stopTask = null;
@@ -142,16 +165,25 @@ public final class CursedMiniEvents extends JavaPlugin implements Listener {
         dropIf(50, Material.DIAMOND, block);
         dropIf(50, Material.NETHERITE_SCRAP, block);
 
-        if (!appleDroppedThisEvent && random.nextInt(10_000) == 0) {
+        if (!appleDroppedThisEvent && random.nextInt(5_000) == 0) {
             appleDroppedThisEvent = true;
             block.getWorld().dropItemNaturally(block.getLocation().add(0.5, 0.5, 0.5), createAppleOfLife());
-            Bukkit.broadcastMessage("§d§lAPPLE OF LIFE §5has been discovered!");
+            Bukkit.broadcastMessage("§5§l✦ APPLE OF LIFE ✦ §d" + event.getPlayer().getName() + " §fhas discovered the §5§lApple Of Life§f!");
+            for (Player online : Bukkit.getOnlinePlayers()) {
+                online.sendTitle("§5§lAPPLE OF LIFE!", "§d" + event.getPlayer().getName() + " found the rarest reward!", 10, 80, 20);
+                online.playSound(online.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0f, 0.7f);
+            }
         }
 
-        dropArmor(Material.DIAMOND_HELMET, block);
-        dropArmor(Material.DIAMOND_CHESTPLATE, block);
-        dropArmor(Material.DIAMOND_LEGGINGS, block);
-        dropArmor(Material.DIAMOND_BOOTS, block);
+        List<Material> successfulArmorRolls = new ArrayList<>();
+        for (Material piece : List.of(Material.DIAMOND_HELMET, Material.DIAMOND_CHESTPLATE,
+                Material.DIAMOND_LEGGINGS, Material.DIAMOND_BOOTS)) {
+            if (random.nextInt(500) == 0) successfulArmorRolls.add(piece);
+        }
+        if (!successfulArmorRolls.isEmpty()) {
+            Material chosenPiece = successfulArmorRolls.get(random.nextInt(successfulArmorRolls.size()));
+            dropArmor(chosenPiece, block, event.getPlayer());
+        }
     }
 
     private void dropIf(int denominator, Material material, Block block) {
@@ -173,8 +205,7 @@ public final class CursedMiniEvents extends JavaPlugin implements Listener {
         return 10;
     }
 
-    private void dropArmor(Material material, Block block) {
-        if (random.nextInt(500) != 0) return;
+    private void dropArmor(Material material, Block block, Player finder) {
         ItemStack armor = new ItemStack(material);
         ItemMeta meta = armor.getItemMeta();
         if (meta != null) {
@@ -197,6 +228,22 @@ public final class CursedMiniEvents extends JavaPlugin implements Listener {
             armor.setItemMeta(meta);
         }
         block.getWorld().dropItemNaturally(block.getLocation().add(0.5, 0.5, 0.5), armor);
+        String pieceName = switch (material) {
+            case DIAMOND_HELMET -> "Diamond Helmet";
+            case DIAMOND_CHESTPLATE -> "Diamond Chestplate";
+            case DIAMOND_LEGGINGS -> "Diamond Leggings";
+            case DIAMOND_BOOTS -> "Diamond Boots";
+            default -> material.name();
+        };
+        Bukkit.broadcastMessage("§b§lDIAMOND ARMOR! §f" + finder.getName() + " §7found enchanted §b" + pieceName + "§7!");
+        for (Player online : Bukkit.getOnlinePlayers()) {
+            online.playSound(online.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.2f);
+        }
+    }
+
+    @EventHandler
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        if (luckyLeavesActive && eventBossBar != null) eventBossBar.addPlayer(event.getPlayer());
     }
 
     private void addEnchant(ItemMeta meta, String key, int level) {
