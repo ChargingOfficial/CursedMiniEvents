@@ -7,8 +7,8 @@ description: Custom mini-events including Lucky Leaves and the infinite-use Appl
 commands:
   minievent:
     description: Manage the Lucky Leaves mini-event.
-    usage: /minievent luckyleaves <start [minutes]|stop|status>
-    permission: cursedminievents.admin
+    usage: /minievent <droprates|luckyleaves <start [minutes]|stop|status>>
+
   minievents:
     description: Give Cursed Mini Events items.
     usage: /minievents give apple
