@@ -19,7 +19,12 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
       - name: Build plugin
-        run: gradle build --no-daemon
+        run: gradle clean build --no-daemon
+      - name: Verify compiled plugin classes
+        run: |
+          test -f build/classes/java/main/com/cursedminievents/CursedMiniEvents.class
+          jar tf build/libs/*.jar | grep -q 'com/cursedminievents/CursedMiniEvents.class'
+          jar tf build/libs/*.jar | grep -q 'plugin.yml'
       - name: Upload plugin JAR
         uses: actions/upload-artifact@v4
         with:
